@@ -1,451 +1,192 @@
-/**
- * AssumptionsTab.js
- * Onglet hypothèses du tableau de bord SaaS
- */
 import React from 'react';
-import { formatNumber, formatCurrency, formatPercent } from '../utils/utils';
+import { formatNumber, formatCurrency } from '../utils/utils';
+import { LabeledInput, FormSection, InputGrid } from '../components/StandardUI';
 
 const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
-  // Fonction pour gérer les modifications d'hypothèses
   const handleChange = (category, key, value) => {
-    if (onAssumptionChange) {
-      onAssumptionChange(category, key, value);
-    }
+    onAssumptionChange?.(category, key, value);
   };
-  
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Structure de revenus</h3>
-        
+      <FormSection title="Structure de revenus">
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-600 mb-3">Prix mensuels par niveau</h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Basic (€)</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.pricing.basic}
-                onChange={(e) => handleChange('pricing', 'basic', Number(e.target.value))}
+          <InputGrid columns={3}>
+            {['basic', 'pro', 'enterprise'].map((level) => (
+              <LabeledInput
+                key={level}
+                label={`${level.charAt(0).toUpperCase() + level.slice(1)} (€)`}
+                value={assumptions.pricing[level]}
+                onChange={(e) => handleChange('pricing', level, Number(e.target.value))}
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Pro (€)</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.pricing.pro}
-                onChange={(e) => handleChange('pricing', 'pro', Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Enterprise (€)</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.pricing.enterprise}
-                onChange={(e) => handleChange('pricing', 'enterprise', Number(e.target.value))}
-              />
-            </div>
-          </div>
+            ))}
+          </InputGrid>
         </div>
-        
+
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-600 mb-3">Distribution des clients (%)</h4>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Basic</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.distribution.basic}
-                onChange={(e) => handleChange('distribution', 'basic', Number(e.target.value))}
+          <InputGrid columns={3}>
+            {['basic', 'pro', 'enterprise'].map((level) => (
+              <LabeledInput
+                key={level}
+                label={level.charAt(0).toUpperCase() + level.slice(1)}
+                value={assumptions.distribution[level]}
+                onChange={(e) => handleChange('distribution', level, Number(e.target.value))}
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Pro</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.distribution.pro}
-                onChange={(e) => handleChange('distribution', 'pro', Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Enterprise</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.distribution.enterprise}
-                onChange={(e) => handleChange('distribution', 'enterprise', Number(e.target.value))}
-              />
-            </div>
-          </div>
+            ))}
+          </InputGrid>
           {assumptions.distribution.basic + assumptions.distribution.pro + assumptions.distribution.enterprise !== 100 && (
-            <p className="text-red-500 text-xs mt-2">
-              La somme des pourcentages doit être égale à 100%
-            </p>
+            <p className="text-red-500 text-xs mt-2">La somme des pourcentages doit être égale à 100%</p>
           )}
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              Clients avec facturation annuelle (%)
-            </label>
-            <input
-              type="number"
-              className="w-full p-2 border rounded-md"
-              value={assumptions.annualBilling}
-              onChange={(e) => handleChange('annualBilling', null, Number(e.target.value))}
-              min="0"
-              max="100"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              Remise facturation annuelle (%)
-            </label>
-            <input
-              type="number"
-              className="w-full p-2 border rounded-md"
-              value={assumptions.annualDiscount}
-              onChange={(e) => handleChange('annualDiscount', null, Number(e.target.value))}
-              min="0"
-              max="100"
-            />
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Rétention et acquisition</h3>
-        
+
+        <InputGrid>
+          <LabeledInput
+            label="Clients avec facturation annuelle (%)"
+            value={assumptions.annualBilling}
+            onChange={(e) => handleChange('annualBilling', null, Number(e.target.value))}
+            min="0"
+            max="100"
+          />
+          <LabeledInput
+            label="Remise facturation annuelle (%)"
+            value={assumptions.annualDiscount}
+            onChange={(e) => handleChange('annualDiscount', null, Number(e.target.value))}
+            min="0"
+            max="100"
+          />
+        </InputGrid>
+      </FormSection>
+
+      <FormSection title="Rétention et acquisition">
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-600 mb-3">Métriques de rétention</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Taux de churn mensuel (%)
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.churnRate}
-                onChange={(e) => handleChange('churnRate', null, Number(e.target.value))}
-                min="0"
-                max="100"
-                step="0.1"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Durée de vie moyenne (mois)
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md bg-gray-100"
-                value={formatNumber(100 / assumptions.churnRate, 1)}
-                readOnly
-              />
-            </div>
-          </div>
+          <InputGrid>
+            <LabeledInput
+              label="Taux de churn mensuel (%)"
+              value={assumptions.churnRate}
+              onChange={(e) => handleChange('churnRate', null, Number(e.target.value))}
+              min="0"
+              max="100"
+              step="0.1"
+            />
+            <LabeledInput
+              label="Durée de vie moyenne (mois)"
+              value={formatNumber(100 / assumptions.churnRate, 1)}
+              readOnly
+              type="text"
+            />
+          </InputGrid>
         </div>
-        
+
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-600 mb-3">Acquisition clients</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Budget marketing (% du CA)
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.marketingBudget}
-                onChange={(e) => handleChange('marketingBudget', null, Number(e.target.value))}
-                min="0"
-                max="100"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Acquisition organique (%)
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.organicAcquisition}
-                onChange={(e) => handleChange('organicAcquisition', null, Number(e.target.value))}
-                min="0"
-                max="100"
-              />
-            </div>
-          </div>
+          <InputGrid>
+            <LabeledInput
+              label="Budget marketing (% du CA)"
+              value={assumptions.marketingBudget}
+              onChange={(e) => handleChange('marketingBudget', null, Number(e.target.value))}
+              min="0"
+              max="100"
+            />
+            <LabeledInput
+              label="Acquisition organique (%)"
+              value={assumptions.organicAcquisition}
+              onChange={(e) => handleChange('organicAcquisition', null, Number(e.target.value))}
+              min="0"
+              max="100"
+            />
+          </InputGrid>
         </div>
-        
+
         <div>
           <h4 className="text-sm font-medium text-gray-600 mb-3">Résultats calculés</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                LTV Client
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md bg-gray-100"
-                value={formatCurrency(results.metrics.customerLTV)}
-                readOnly
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                CAC
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md bg-gray-100"
-                value={formatCurrency(results.metrics.averageCAC)}
-                readOnly
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                LTV/CAC
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md bg-gray-100"
-                value={results.metrics.ltvCacRatio.toFixed(2) + 'x'}
-                readOnly
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                CAC Payback Period
-              </label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded-md bg-gray-100"
-                value={formatNumber(results.metrics.cacPaybackPeriod, 1) + ' mois'}
-                readOnly
-              />
-            </div>
-          </div>
+          <InputGrid>
+            <LabeledInput label="LTV Client" value={formatCurrency(results.metrics.customerLTV)} readOnly type="text" />
+            <LabeledInput label="CAC" value={formatCurrency(results.metrics.averageCAC)} readOnly type="text" />
+            <LabeledInput label="LTV/CAC" value={`${results.metrics.ltvCacRatio.toFixed(2)}x`} readOnly type="text" />
+            <LabeledInput label="CAC Payback Period" value={`${formatNumber(results.metrics.cacPaybackPeriod, 1)} mois`} readOnly type="text" />
+          </InputGrid>
         </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Efficacité opérationnelle</h3>
-        
+      </FormSection>
+
+      <FormSection title="Efficacité opérationnelle">
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-600 mb-3">Clients par employé</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Développement
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salesEfficiency.development}
-                onChange={(e) => handleChange('salesEfficiency', 'development', Number(e.target.value))}
+          <InputGrid columns={3}>
+            {['development', 'marketing', 'sales', 'support', 'management'].map((role) => (
+              <LabeledInput
+                key={role}
+                label={role.charAt(0).toUpperCase() + role.slice(1)}
+                value={assumptions.salesEfficiency[role]}
+                onChange={(e) => handleChange('salesEfficiency', role, Number(e.target.value))}
                 min="1"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Marketing
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salesEfficiency.marketing}
-                onChange={(e) => handleChange('salesEfficiency', 'marketing', Number(e.target.value))}
-                min="1"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Ventes
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salesEfficiency.sales}
-                onChange={(e) => handleChange('salesEfficiency', 'sales', Number(e.target.value))}
-                min="1"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Support
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salesEfficiency.support}
-                onChange={(e) => handleChange('salesEfficiency', 'support', Number(e.target.value))}
-                min="1"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Direction
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salesEfficiency.management}
-                onChange={(e) => handleChange('salesEfficiency', 'management', Number(e.target.value))}
-                min="1"
-              />
-            </div>
-          </div>
+            ))}
+          </InputGrid>
         </div>
-        
+
         <div>
           <h4 className="text-sm font-medium text-gray-600 mb-3">Salaires annuels moyens (€)</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Développement
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salaries.development}
-                onChange={(e) => handleChange('salaries', 'development', Number(e.target.value))}
+          <InputGrid columns={3}>
+            {['development', 'marketing', 'sales', 'support', 'management'].map((role) => (
+              <LabeledInput
+                key={role}
+                label={role.charAt(0).toUpperCase() + role.slice(1)}
+                value={assumptions.salaries[role]}
+                onChange={(e) => handleChange('salaries', role, Number(e.target.value))}
                 min="0"
                 step="1000"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Marketing
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salaries.marketing}
-                onChange={(e) => handleChange('salaries', 'marketing', Number(e.target.value))}
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Ventes
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salaries.sales}
-                onChange={(e) => handleChange('salaries', 'sales', Number(e.target.value))}
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Support
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salaries.support}
-                onChange={(e) => handleChange('salaries', 'support', Number(e.target.value))}
-                min="0"
-                step="1000"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Direction
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={assumptions.salaries.management}
-                onChange={(e) => handleChange('salaries', 'management', Number(e.target.value))}
-                min="0"
-                step="1000"
-              />
-            </div>
-          </div>
+            ))}
+          </InputGrid>
         </div>
-      </div>
-      
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">Coûts opérationnels</h3>
-        
+      </FormSection>
+
+      <FormSection title="Coûts opérationnels">
         <div className="mb-6">
           <h4 className="text-sm font-medium text-gray-600 mb-3">Coûts d'infrastructure</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Coût infrastructure par client/mois (€)
-              </label>
-              <input
-  type="number"
-  className="w-full p-2 border rounded-md"
-  value={results?.assumptions?.infrastructureCostPerUser || 0}
-  onChange={(e) => handleChange('infrastructureCostPerUser', null, Number(e.target.value))}
-  min="0"
-  step="0.1"
-/>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Coût support par client/mois (€)
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={results.assumptions.supportCostPerUser}
-                onChange={(e) => handleChange('supportCostPerUser', null, Number(e.target.value))}
-                min="0"
-                step="0.1"
-              />
-            </div>
-          </div>
+          <InputGrid>
+            <LabeledInput
+              label="Coût infrastructure par client/mois (€)"
+              value={results.assumptions.infrastructureCostPerUser || 0}
+              onChange={(e) => handleChange('infrastructureCostPerUser', null, Number(e.target.value))}
+              min="0"
+              step="0.1"
+            />
+            <LabeledInput
+              label="Coût support par client/mois (€)"
+              value={results.assumptions.supportCostPerUser}
+              onChange={(e) => handleChange('supportCostPerUser', null, Number(e.target.value))}
+              min="0"
+              step="0.1"
+            />
+          </InputGrid>
         </div>
-        
+
         <div>
           <h4 className="text-sm font-medium text-gray-600 mb-3">Frais généraux</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Frais généraux (% du CA)
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={results.assumptions.overheadPercentage * 100}
-                onChange={(e) => handleChange('overheadPercentage', null, Number(e.target.value) / 100)}
-                min="0"
-                max="100"
-                step="1"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Marge nette cible (%)
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded-md"
-                value={results.assumptions.targetProfitMargin * 100}
-                onChange={(e) => handleChange('targetProfitMargin', null, Number(e.target.value) / 100)}
-                min="-100"
-                max="100"
-                step="1"
-              />
-            </div>
-          </div>
+          <InputGrid>
+            <LabeledInput
+              label="Frais généraux (% du CA)"
+              value={results.assumptions.overheadPercentage * 100}
+              onChange={(e) => handleChange('overheadPercentage', null, Number(e.target.value) / 100)}
+              min="0"
+              max="100"
+              step="1"
+            />
+            <LabeledInput
+              label="Marge nette cible (%)"
+              value={results.assumptions.targetProfitMargin * 100}
+              onChange={(e) => handleChange('targetProfitMargin', null, Number(e.target.value) / 100)}
+              min="-100"
+              max="100"
+              step="1"
+            />
+          </InputGrid>
         </div>
-      </div>
+      </FormSection>
     </div>
   );
 };
