@@ -3,6 +3,15 @@ import { formatNumber, formatCurrency } from '../utils/utils';
 import { LabeledInput, FormSection, InputGrid } from '../components/StandardUI';
 
 const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
+  if (!assumptions || !assumptions.pricing || !assumptions.distribution) {
+    return <div className="p-4 text-red-600">Chargement des hypothèses en cours...</div>;
+  }
+
+  const pricing = assumptions.pricing || { basic: 0, pro: 0, enterprise: 0 };
+  const distribution = assumptions.distribution || { basic: 0, pro: 0, enterprise: 0 };
+  const salesEfficiency = assumptions.salesEfficiency || {};
+  const salaries = assumptions.salaries || {};
+
   const handleChange = (category, key, value) => {
     onAssumptionChange?.(category, key, value);
   };
@@ -17,7 +26,7 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
               <LabeledInput
                 key={level}
                 label={`${level.charAt(0).toUpperCase() + level.slice(1)} (€)`}
-                value={assumptions.pricing[level]}
+                value={pricing[level]}
                 onChange={(e) => handleChange('pricing', level, Number(e.target.value))}
               />
             ))}
@@ -31,12 +40,12 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
               <LabeledInput
                 key={level}
                 label={level.charAt(0).toUpperCase() + level.slice(1)}
-                value={assumptions.distribution[level]}
+                value={distribution[level]}
                 onChange={(e) => handleChange('distribution', level, Number(e.target.value))}
               />
             ))}
           </InputGrid>
-          {assumptions.distribution.basic + assumptions.distribution.pro + assumptions.distribution.enterprise !== 100 && (
+          {distribution.basic + distribution.pro + distribution.enterprise !== 100 && (
             <p className="text-red-500 text-xs mt-2">La somme des pourcentages doit être égale à 100%</p>
           )}
         </div>
@@ -119,7 +128,7 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
               <LabeledInput
                 key={role}
                 label={role.charAt(0).toUpperCase() + role.slice(1)}
-                value={assumptions.salesEfficiency[role]}
+                value={salesEfficiency[role] || ''}
                 onChange={(e) => handleChange('salesEfficiency', role, Number(e.target.value))}
                 min="1"
               />
@@ -134,7 +143,7 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
               <LabeledInput
                 key={role}
                 label={role.charAt(0).toUpperCase() + role.slice(1)}
-                value={assumptions.salaries[role]}
+                value={salaries[role] || ''}
                 onChange={(e) => handleChange('salaries', role, Number(e.target.value))}
                 min="0"
                 step="1000"
@@ -157,7 +166,7 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
             />
             <LabeledInput
               label="Coût support par client/mois (€)"
-              value={results.assumptions.supportCostPerUser}
+              value={results.assumptions.supportCostPerUser || 0}
               onChange={(e) => handleChange('supportCostPerUser', null, Number(e.target.value))}
               min="0"
               step="0.1"
@@ -170,7 +179,7 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
           <InputGrid>
             <LabeledInput
               label="Frais généraux (% du CA)"
-              value={results.assumptions.overheadPercentage * 100}
+              value={(results.assumptions.overheadPercentage || 0) * 100}
               onChange={(e) => handleChange('overheadPercentage', null, Number(e.target.value) / 100)}
               min="0"
               max="100"
@@ -178,7 +187,7 @@ const AssumptionsTab = ({ results, assumptions, onAssumptionChange }) => {
             />
             <LabeledInput
               label="Marge nette cible (%)"
-              value={results.assumptions.targetProfitMargin * 100}
+              value={(results.assumptions.targetProfitMargin || 0) * 100}
               onChange={(e) => handleChange('targetProfitMargin', null, Number(e.target.value) / 100)}
               min="-100"
               max="100"

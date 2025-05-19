@@ -140,44 +140,46 @@ class SaasFinancialModel {
      * Calcule le nombre de clients requis pour atteindre le CA cible
      */
     _calculateRequiredCustomers() {
-      // Calcul du revenu moyen par utilisateur (ARPU)
-      const { averageRevenuePerUser, customerDistribution, annualBillingPercentage, annualBillingDiscount } = this.assumptions;
-      
-      let weightedMonthlyARPU = 0;
-      
-      // Calcul de l'ARPU pondéré par la distribution des clients
-      for (const tier in averageRevenuePerUser) {
-        weightedMonthlyARPU += averageRevenuePerUser[tier] * customerDistribution[tier];
-      }
-      
-      // Ajustement pour les remises de facturation annuelle
-      const effectiveMonthlyARPU = weightedMonthlyARPU * (
-        (1 - annualBillingPercentage) + 
-        annualBillingPercentage * (1 - annualBillingDiscount)
-      );
-      
-      // Conversion en ARPU annuel
+      const { initialCustomers, pricing, annualBilling, annualDiscount } = this.assumptions;
+    
+      // Total clients et répartition
+      const customersByTier = {
+        basic: initialCustomers.basic,
+        pro: initialCustomers.pro,
+        enterprise: initialCustomers.enterprise
+      };
+    
+      const totalCustomers = customersByTier.basic + customersByTier.pro + customersByTier.enterprise;
+    
+      // ARPU mensuel par niveau
+      const arpuByTier = {
+        basic: pricing.basic,
+        pro: pricing.pro,
+        enterprise: pricing.enterprise
+      };
+    
+      const monthlyRevenue = Object.entries(customersByTier).reduce((sum, [tier, count]) => {
+        const arpu = arpuByTier[tier] || 0;
+        const monthly = count * arpu * ((1 - annualBilling / 100) + (annualBilling / 100) * (1 - annualDiscount / 100));
+        return sum + monthly;
+      }, 0);
+    
+      const effectiveMonthlyARPU = monthlyRevenue / totalCustomers;
       const annualARPU = effectiveMonthlyARPU * 12;
-      
-      // Calcul du nombre total de clients nécessaires
-      const requiredCustomers = Math.ceil(this.targetAnnualRevenue / annualARPU);
-      
-      // Répartition des clients par niveau
-      const customersByTier = {};
-      for (const tier in customerDistribution) {
-        customersByTier[tier] = Math.round(requiredCustomers * customerDistribution[tier]);
-      }
-      
-      // Stockage des résultats
+    
+      // Stockage
       this.results.customers = {
-        total: requiredCustomers,
+        total: totalCustomers,
         byTier: customersByTier,
         monthlyARPU: effectiveMonthlyARPU,
         annualARPU: annualARPU
       };
-      
+    
+      this.assumptions.averageRevenuePerUser = arpuByTier; // utile ailleurs
+    
       return this.results.customers;
     }
+    
     
     /**
      * Calcule les coûts d'acquisition et marketing nécessaires
@@ -367,39 +369,64 @@ class SaasFinancialModel {
 /**
  * Calcule une projection de croissance sur 5 ans
  */
+/**
+ * Calcule une projection de croissance sur 5 ans
+ * Basé sur les clients initiaux et un taux de croissance unique
+ */
 _calculateGrowthProjection() {
-    const projectionYears = 5;
-    const growthRates = [0.8, 0.5, 0.3, 0.25, 0.2]; // Taux de croissance annuelle (80%, 50%, 30%, 25%, 20%)
-    const projection = [];
-    
-    let currentRevenue = this.targetAnnualRevenue;
-    let currentCustomers = this.results.customers.total;
-    
+  const projectionYears = 5;
+  const growthRate = this.assumptions.growthRate / 100; // ex: 25% => 0.25
+  const pricing = this.assumptions.pricing;
+
+  let currentCustomersByTier = { ...this.assumptions.initialCustomers };
+  let currentRevenue = this._computeRevenueFromCustomers(currentCustomersByTier, pricing);
+  let currentEmployees = this.results.headcount.total;
+
+  const projection = [];
+
+  for (let year = 1; year <= projectionYears; year++) {
+    // Total clients
+    const totalCustomers = Object.values(currentCustomersByTier).reduce((a, b) => a + b, 0);
+
+    // Revenue from updated customer count
+    const revenue = this._computeRevenueFromCustomers(currentCustomersByTier, pricing);
+
+    // Employees based on current customer ratio
+    const employees = Math.round(totalCustomers / (this.results.customers.total / this.results.headcount.total));
+
+    // Store the year projection
     projection.push({
-      year: 1,
-      revenue: currentRevenue,
-      customers: currentCustomers,
-      employees: this.results.headcount.total
+      year,
+      revenue,
+      customers: totalCustomers,
+      employees
     });
-    
-    for (let i = 0; i < projectionYears - 1; i++) {
-      currentRevenue = currentRevenue * (1 + growthRates[i]);
-      currentCustomers = Math.round(currentCustomers * (1 + growthRates[i]));
-      
-      // Calcul simple des employés basé sur le ratio actuel, sans créer de modèle récursif
-      const estimatedEmployees = Math.round(currentCustomers / (this.results.customers.total / this.results.headcount.total));
-      
-      projection.push({
-        year: i + 2,
-        revenue: currentRevenue,
-        customers: currentCustomers,
-        employees: estimatedEmployees
-      });
-    }
-    
-    this.results.growthProjection = projection;
-    return projection;
+
+    // Grow customers for next year
+    currentCustomersByTier = Object.fromEntries(
+      Object.entries(currentCustomersByTier).map(([tier, count]) => [tier, Math.round(count * (1 + growthRate))])
+    );
   }
+
+  this.results.growthProjection = projection;
+  return projection;
+}
+
+/**
+ * Helper: Calcule le chiffre d’affaires annuel à partir d’un nombre de clients et de prix mensuels
+ */
+_computeRevenueFromCustomers(customersByTier, pricing) {
+  const { annualBilling, annualDiscount } = this.assumptions;
+
+  const monthlyRevenue = Object.entries(customersByTier).reduce((sum, [tier, count]) => {
+    const price = pricing[tier] || 0;
+    const adjusted = price * ((1 - annualBilling / 100) + (annualBilling / 100) * (1 - annualDiscount / 100));
+    return sum + count * adjusted;
+  }, 0);
+
+  return monthlyRevenue * 12;
+}
+
     
     /**
      * Génère un rapport complet

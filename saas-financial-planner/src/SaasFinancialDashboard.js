@@ -11,6 +11,7 @@ import HeadcountTab from './components/HeadcountTab';
 import MetricsTab from './components/MetricsTab';
 import GrowthTab from './components/GrowthTab';
 import AssumptionsTab from './components/AssumptionsTab';
+import PipelineCommercialTab from './components/PipelineCommercialTab';
 import { generateRecommendations } from './utils/utils';
 
 const SaasFinancialDashboard = () => {
@@ -206,8 +207,7 @@ const SaasFinancialDashboard = () => {
   }, [targetRevenue, assumptions]);
   
   // Fonction pour calculer le modèle
-  // Fonction pour calculer le modèle
-const calculateModel = () => {
+  const calculateModel = () => {
     setLoading(true);
     
     // Utiliser setTimeout pour rendre l'interface réactive
@@ -400,6 +400,12 @@ const calculateModel = () => {
             >
               Hypothèses
             </button>
+            <button 
+              className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${activeTab === 'pipeline' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-500' : 'text-gray-600'}`}
+              onClick={() => setActiveTab('pipeline')}
+            >
+              Pipeline commercial
+            </button>
           </div>
           
           <div className="p-4 relative">
@@ -423,6 +429,7 @@ const calculateModel = () => {
                 onAssumptionChange={handleAssumptionChange} 
               />
             )}
+            {activeTab === 'pipeline' && <PipelineCommercialTab />}
           </div>
         </div>
         
