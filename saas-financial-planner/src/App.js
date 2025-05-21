@@ -1,12 +1,9 @@
 import React from 'react';
-import SaasFinancialDashboard from './SaasFinancialDashboard';
+import FinancialProjections from './index-file';
+import './index.css';
 
-const App = () => {
-  return (
-    <div className="App">
-      <SaasFinancialDashboard />
-    </div>
-  );
-};
+function App() {
+  return <FinancialProjections />;
+}
 
-export default App;
+export default App; 
